@@ -3,3 +3,5 @@ __pycache__/
 out/
 farm.yaml
 .pytest_cache/
+docs/CLAIM.md
+docs/RESEARCH.md

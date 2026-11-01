@@ -10,7 +10,7 @@ ShotFarm is our entry for the **Decentralize AI Hackathon** (HackerNoon × Nosan
 - FAQ rule: mockups and demo-less prototypes are **not eligible for prizes**. We need working code, a deployment, and reproducible metrics.
 - Judging rubric (decentralizeai.tech/judges): deep technical understanding, novel insights, real-world impact, research & evidence (cite specific projects/papers/people), clear communication.
 - Judges include Sjoerd Dijkstra (Nosana co-founder), David Smooke (HackerNoon CEO), Ojus Save (Render DevRel), Valeria Kholostenko (Decentralized Storage Alliance).
-- Target prize: **Nosana winner reward** ($450 compute credits × 15 winners). Every eligible participant also gets $70 in Nosana credits via https://decentralizeai.tech/claim/nosana (answers drafted in `docs/CLAIM.md`).
+- Target prize: **Nosana winner reward** ($450 compute credits × 15 winners). Every eligible participant also gets $70 in Nosana credits via https://decentralizeai.tech/claim/nosana.
 - Competition is thin: about 39 tagged posts by Nov 1 2026.
 
 ## The idea (one line)
@@ -20,7 +20,7 @@ A render farm for long-form open AI video: render every shot of a film **at the 
 ## Why it's new
 
 - **MiniMax H3** (open weights, Aug 2026) generates video with native 32 kHz stereo audio, 4–15 s per generation, 768p, 24 fps. On Nosana an RTX 5090 renders a 5 s clip in about 2 min (~$0.013/clip, ~$0.40/GPU-hr, ~4 min cold start). Source: https://nosana.com/blog/how-to-use-minimax-h3
-- Existing long-video tools for H3 are **sequential or interactive**: each window is conditioned on the previous window's tail. Research has parallel tree sampling (ATS, arXiv 2605.20476), so don't claim nobody parallelizes. See `docs/RESEARCH.md`.
+- Existing long-video tools for H3 are **sequential or interactive**: each window is conditioned on the previous window's tail. Research has parallel tree sampling (ATS, arXiv 2605.20476), so don't claim nobody parallelizes.
   - H3-Motion-Context / Endless MiniMax H3: https://comfyui-wiki.com/en/news/2026-09-03-endless-minimax-h3 (1:30 of video in ~2 h on one GPU)
   - Wan2GP sliding window, vLLM-Omni #6737 / #7838: https://github.com/vllm-project/vllm-omni/issues/6737 (has audio RMS-jump measurements we reuse as a metric)
   - Reddit thread on H3 clip chaining (r/StableDiffusion "Clip chaining for MiniMax H3"). User DeliciousGorilla found that pinning both ends of each clip (parallelizable) causes **motion stalls at the joins**, because each clip starts at zero velocity. That's the problem our draft-then-parallel method targets.
@@ -57,8 +57,6 @@ tests/test_farm.py       tests against mock nodes (all pass, ~3 min)
 examples/storyboard.yaml 30 s, 6-segment test film
 nosana/README.md         how to deploy the H3 template on Nosana + budget
 workflows/README.md      how to export ComfyUI workflows with placeholders
-docs/CLAIM.md            Nosana credit claim form answers
-docs/RESEARCH.md         verified template facts, open risks, prior art to cite
 ```
 
 Only dependencies are numpy, PyYAML and pytest, plus `ffmpeg`/`ffprobe` on PATH. Run `pytest -q`.
@@ -69,7 +67,7 @@ Seam metrics: `video_jump` = pixel change across the join ÷ median in-clip fram
 
 - [x] Event vetted, idea chosen, prior-art check done
 - [x] Orchestrator + scheduler + 3 strategies + stitching + metrics, tested on mock nodes
-- [x] Claim answers drafted (`docs/CLAIM.md`)
+- [x] Claim answers drafted
 - [ ] **Submit the Nosana credit claim** (the user does this; it needs their phone number and agreement)
 - [ ] Get the credits, deploy the H3 template on Nosana (RTX 5090, Simple strategy, replicas 1, fixed timeout; template link in nosana/README.md)
 - [ ] Export real ComfyUI API workflows into `workflows/` (image, i2v, fl2v, draft, final) and replace values with placeholders
@@ -82,7 +80,7 @@ Seam metrics: `video_jump` = pixel change across the join ÷ median in-clip fram
 
 ## Known risks / open questions
 
-- Full list with sources in `docs/RESEARCH.md`. Test those risks in order on one node before scaling up.
+- Test these risks on one node before scaling up.
 - The templates in `tests/templates/` are mocks with a fake top-level `"meta"` key that real workflows don't have. Real node names are in `workflows/README.md`, but no real workflow has run yet.
 - Nosana's H3 template has one model per variant and no image model. Use the Image to Video variant everywhere; Ref2VA can't pin frames anyway.
 - Does `nosana/comfyui:2.0.11` include `MiniMaxH3AddGuide`, and does its audio input work? `shotfarm check` answers the first.
