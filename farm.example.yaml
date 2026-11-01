@@ -1,0 +1,18 @@
+# Copy to farm.yaml and fill in.
+# One entry per running Nosana deployment (its "Service URL").
+endpoints:
+  - https://REPLACE-ME-1.node.k8s.prd.nos.ci
+  - https://REPLACE-ME-2.node.k8s.prd.nos.ci
+
+# Used for the cost estimate in each report. Update from the Nosana dashboard
+# for the GPU market you deploy on.
+usd_per_gpu_hour: 0.40
+
+# ComfyUI workflows exported with "Save (API Format)" and edited to use
+# ShotFarm placeholders. See workflows/README.md.
+templates:
+  image: workflows/keyframe_flux.json      # {{PROMPT}} {{SEED}} {{WIDTH}} {{HEIGHT}}
+  i2v:   workflows/h3_i2va.json            # + {{FIRST_FRAME}} {{SECONDS}}
+  fl2v:  workflows/h3_fl2va.json           # + {{FIRST_FRAME}} {{LAST_FRAME}}
+  draft: workflows/h3_i2va_draft.json      # low-res / fewer steps / turbo LoRA
+  final: workflows/h3_ref2va_final.json    # + {{FIRST_FRAME}} {{LAST_FRAME}} {{REF_AUDIO}}

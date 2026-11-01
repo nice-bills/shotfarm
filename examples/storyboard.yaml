@@ -1,0 +1,37 @@
+# A 30-second, 6-segment test film. Segment i runs from keyframe i to keyframe i+1,
+# so there is always one more keyframe than there are segments.
+title: "The Last Lighthouse Keeper"
+style: "Cinematic live-action, 35mm film grain, overcast coastal light, restrained camera movement."
+seed: 42
+width: 1280
+height: 768
+fps: 24
+
+keyframes:
+  - "Wide shot of a lone stone lighthouse on a cliff at dusk, storm clouds gathering."
+  - "An old keeper in a wool coat climbing a spiral iron staircase, lantern in hand."
+  - "Close-up of the keeper's weathered hands striking a match beside the great lens."
+  - "The huge Fresnel lens bursting into light, beam sweeping out over the dark sea."
+  - "A small fishing boat in heavy swell, its crew looking up at the beam."
+  - "The boat safely rounding the rocks into a calm harbour, lights of a village ahead."
+  - "The keeper at the lighthouse window, watching the boat, a quiet smile."
+
+segments:
+  - prompt: "Slow push-in toward the lighthouse as the first raindrops fall; the keeper's silhouette appears in the doorway."
+    audio: "Wind rising, waves crashing on rocks below, distant thunder."
+    seconds: 5
+  - prompt: "Tracking shot following the keeper up the spiral staircase, lantern swinging, shadows turning on the walls."
+    audio: "Heavy boots on iron steps, his breathing, rain against the windows."
+    seconds: 5
+  - prompt: "The keeper reaches the lamp room and kneels by the lens, fumbling a match in cold fingers."
+    audio: "A match scraping twice, then catching; wind howling outside."
+    seconds: 5
+  - prompt: "The flame catches and the lens ignites; the beam begins to rotate out over the water."
+    audio: "A low mechanical hum as the lens turns, a rush of wind."
+    seconds: 5
+  - prompt: "Cut to the sea: the beam sweeps across a fishing boat struggling in the swell; a crewman points."
+    audio: "Crashing waves, a crewman shouting 'There! The light!'"
+    seconds: 5
+  - prompt: "The boat turns with the beam, clearing the rocks and gliding into the calm harbour as the keeper watches."
+    audio: "The storm fading, gulls, a harbour bell ringing softly."
+    seconds: 5

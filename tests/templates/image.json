@@ -1,0 +1,12 @@
+{
+ "meta": {
+  "kind": "image",
+  "seed": "{{SEED}}"
+ },
+ "6": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "{{PROMPT}}"
+  }
+ }
+}

@@ -1,0 +1,18 @@
+{
+ "meta": {
+  "kind": "video",
+  "seed": "{{SEED}}",
+  "seconds": "{{SECONDS}}"
+ },
+ "6": {
+  "class_type": "TextEncode",
+  "inputs": {
+   "text": "{{PROMPT}}"
+  }
+ },
+ "10": {
+  "inputs": {
+   "image": "{{FIRST_FRAME}}"
+  }
+ }
+}
