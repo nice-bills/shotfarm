@@ -19,7 +19,7 @@ A render farm for long-form open AI video: render every shot of a film **at the 
 
 ## Why it's new
 
-- **MiniMax H3** (open weights, Aug 2026) generates video with native 32 kHz stereo audio, 4–15 s per generation, 768p, 24 fps. On Nosana an RTX 5090 renders a 5 s clip in about 2 min (~$0.013/clip, ~$0.40/GPU-hr, ~4 min cold start). Source: https://nosana.com/blog/how-to-use-minimax-h3
+- **MiniMax H3** (open weights, Aug 2026) generates video with native 32 kHz stereo audio, 4–15 s per generation, 768p, 24 fps. On Nosana an RTX 5090 renders a 5 s clip in about 2 min (~$0.016/clip at the hackathon's quoted $0.48/GPU-hr, ~4 min cold start). Source: https://nosana.com/blog/how-to-use-minimax-h3
 - Existing long-video tools for H3 are **sequential or interactive**: each window is conditioned on the previous window's tail. Research has parallel tree sampling (ATS, arXiv 2605.20476), so don't claim nobody parallelizes.
   - H3-Motion-Context / Endless MiniMax H3: https://comfyui-wiki.com/en/news/2026-09-03-endless-minimax-h3 (1:30 of video in ~2 h on one GPU)
   - Wan2GP sliding window, vLLM-Omni #6737 / #7838: https://github.com/vllm-project/vllm-omni/issues/6737 (has audio RMS-jump measurements we reuse as a metric)

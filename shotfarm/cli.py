@@ -52,7 +52,7 @@ def cmd_render(a):
           f"{len(endpoints)} GPU(s), strategy={a.strategy}")
     r = Renderer(sb, Templates(**cfg.get("templates", {})), work)
     result = STRATEGIES[a.strategy](r, endpoints)
-    rep = finish(result, work, a.strategy, float(cfg.get("usd_per_gpu_hour", 0.40)), a.crossfade,
+    rep = finish(result, work, a.strategy, float(cfg.get("usd_per_gpu_hour", 0.48)), a.crossfade,
                  float(cfg.get("cold_start_seconds", 240)))
     rep.pop("timeline")
     print(json.dumps(rep, indent=2))

@@ -23,12 +23,12 @@ The REST API does the same with an API key: `POST https://api.nosana.com/deploym
 
 ## Budget
 
-Nosana's published figure is ~2 minutes and ~$0.013 per 5-second H3 clip on an RTX 5090 (about $0.40/GPU-hour). A 60-second film is 12 five-second segments:
+Nosana's published figure is ~2 minutes per 5-second H3 clip on an RTX 5090. The hackathon guide quotes $0.48/GPU-hour, so about $0.016 per clip; Nosana has also advertised from $0.40, so check the market when deploying. The $70 credit buys about 145 GPU-hours. A 60-second film is 12 five-second segments:
 
 | Run | GPU-hours (incl. ~4 min cold start per node) | Approx. cost |
 |---|---|---|
-| sequential, 1 GPU | ~0.5 | ~$0.20 |
-| parallel, 8 GPUs | ~8 × 0.15 | ~$0.50 |
+| sequential, 1 GPU | ~0.5 | ~$0.24 |
+| parallel, 8 GPUs | ~8 × 0.15 | ~$0.58 |
 
 The full experiment matrix (3 strategies × 4 GPU counts × 2 film lengths, with repeats) fits comfortably inside the $70 hackathon credit. **Stop deployments as soon as a run finishes.**
 

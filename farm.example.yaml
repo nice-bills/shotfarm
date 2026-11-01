@@ -6,7 +6,7 @@ endpoints:
 
 # Used for the cost estimate in each report. Update from the Nosana dashboard
 # for the GPU market you deploy on.
-usd_per_gpu_hour: 0.40
+usd_per_gpu_hour: 0.48
 cold_start_seconds: 240
 
 # ComfyUI workflows exported with "Save (API Format)" and edited to use
