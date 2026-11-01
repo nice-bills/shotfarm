@@ -9,9 +9,17 @@ ShotFarm only needs a list of ComfyUI endpoints. On Nosana, each endpoint is a d
 3. Strategy: **Simple**, replicas = 1 per deployment, and a timeout that fits the experiment (e.g. 1–2 h). The default "Infinite" strategy restarts forever and burns credits.
 4. Repeat for as many GPUs as the experiment needs (1, 2, 4, 8).
 5. Copy each deployment's **Service URL** into `farm.yaml`.
-6. `python -m shotfarm check --farm farm.yaml` and wait until all nodes are UP. Cold start is ~4 minutes.
+6. `python -m shotfarm check --farm farm.yaml` and wait until all nodes are UP with no missing nodes. Cold start is ~4 minutes; 44–55 GB of weights must reach each node first.
 
-You can also do this from an AI assistant with the [Nosana MCP server](https://learn.nosana.com/mcp/intro) ("deploy 4 MiniMax H3 instances on RTX 5090 with a 2 hour timeout").
+Use the Image to Video variant for every node. It has the FL2VA weights only, with no Ref2VA weights and no image model. See `workflows/README.md`.
+
+You can also do this from an AI assistant with the [Nosana MCP server](https://learn.nosana.com/mcp/intro) ("deploy 4 MiniMax H3 instances on RTX 5090 with a 2 hour timeout", "stop all my deployments"). It runs on your credit balance, so review each call that changes a deployment:
+
+```bash
+claude mcp add --transport http nosana https://api.nosana.com/mcp
+```
+
+The REST API does the same with an API key: `POST https://api.nosana.com/deployments/{id}/stop`.
 
 ## Budget
 

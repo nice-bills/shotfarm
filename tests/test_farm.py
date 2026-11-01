@@ -10,8 +10,9 @@ from pathlib import Path
 import pytest
 
 from shotfarm import media
+from shotfarm.comfy import ComfyClient, ComfyError
 from shotfarm.scheduler import Job, run_pool
-from shotfarm.storyboard import load
+from shotfarm.storyboard import frames_for, load
 from shotfarm.strategies import STRATEGIES, Renderer, Templates, finish
 from shotfarm.workflow import fill, placeholders
 from tests.mock_node import MockNode
@@ -44,10 +45,71 @@ def test_storyboard_validates():
     assert sb.total_seconds == 30
 
 
+def test_frames_snap_to_h3_grid():
+    assert [frames_for(s) for s in (5, 10, 15)] == [124, 243, 362]
+
+
+def test_storyboard_rejects_size_h3_cannot_render():
+    sb = load(ROOT / "examples" / "storyboard.yaml")
+    sb.height = 720
+    with pytest.raises(ValueError):
+        sb.validate()
+
+
+def test_missing_nodes_reported():
+    node = MockNode()
+    try:
+        assert ComfyClient(node.url).missing_nodes({"TextEncode", "MiniMaxH3AddGuide"}) == {"MiniMaxH3AddGuide"}
+    finally:
+        node.close()
+
+
+def test_rejected_workflow_explains_why():
+    node = MockNode(fail_first=1)
+    try:
+        with pytest.raises(ComfyError, match="simulated node failure"):
+            ComfyClient(node.url).queue({"meta": {}})
+    finally:
+        node.close()
+
+
+def test_wait_survives_network_blip(monkeypatch):
+    c, calls = ComfyClient("http://unused"), []
+
+    def flaky(path):
+        calls.append(path)
+        if len(calls) < 3:
+            raise OSError("connection reset")
+        return b'{"p": {"status": {}, "outputs": {"9": {}}}}'
+
+    monkeypatch.setattr(c, "_get", flaky)
+    assert c.wait("p", poll=0) == {"9": {}}
+
+
+def test_keyframe_from_video_only_node(tmp_path):
+    t = tmp_path / "t2va.json"
+    t.write_text('{"meta": {"kind": "video", "seed": "{{SEED}}", "seconds": 1}}')
+    sb = load(ROOT / "examples" / "storyboard.yaml")
+    node = MockNode(render_seconds=0)
+    try:
+        out = Renderer(sb, Templates(image=str(t)), tmp_path).keyframe(node.url, 0)
+    finally:
+        node.close()
+    assert out.read_bytes()[:4] == b"\x89PNG"
+
+
+def test_draft_parallel_guides_segments_and_cuts_the_guide(nodes, tmp_path):
+    sb = load(ROOT / "examples" / "storyboard.yaml")
+    res = STRATEGIES["draft-parallel"](Renderer(sb, TEMPLATES, tmp_path), [n.url for n in nodes], log=lambda *_: None)
+    assert sb.segments[0].guide_clip is None and sb.segments[0].frames == 124
+    assert sb.segments[1].frames == 141 and (141 - 5) % 17 == 0
+    assert abs(media.duration(sb.segments[1].guide_clip) - 22 / 24) < 0.1
+    assert abs(media.duration(res["clips"][1]) - 119 / 24) < 0.1
+
+
 def test_pool_retries_on_another_node():
     bad, good = MockNode(fail_first=99), MockNode()
     try:
-        from shotfarm.comfy import ComfyClient
         jobs = [Job(f"j{i}", lambda ep: ComfyClient(ep).queue({"meta": {"kind": "image"}})) for i in range(4)]
         res = run_pool(jobs, [bad.url, good.url], log=lambda *_: None)
         assert not res.failed and len(res.results) == 4

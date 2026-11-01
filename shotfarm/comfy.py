@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -37,8 +38,12 @@ class ComfyClient:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=self.timeout) as r:
-            return json.loads(r.read() or b"{}")
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                return json.loads(r.read() or b"{}")
+        except urllib.error.HTTPError as e:
+            # ComfyUI explains a rejected workflow in the body (node_errors).
+            raise ComfyError(f"{path} returned {e.code}: {e.read()[:2000].decode(errors='replace')}") from e
 
     # -- API -----------------------------------------------------------------
     def healthy(self) -> bool:
@@ -47,6 +52,10 @@ class ComfyClient:
             return True
         except Exception:
             return False
+
+    def missing_nodes(self, class_types: set[str]) -> set[str]:
+        """Which of these node types does this ComfyUI not have installed?"""
+        return class_types - json.loads(self._get("/object_info")).keys()
 
     def upload(self, path: str | Path, kind: str = "image") -> str:
         """Upload a local file to ComfyUI's input folder; returns the server-side name."""
@@ -77,9 +86,18 @@ class ComfyClient:
         return res["prompt_id"]
 
     def wait(self, prompt_id: str, poll: float = 3.0, max_wait: float = 1800) -> dict:
-        start = time.time()
+        start, blips = time.time(), 0
         while time.time() - start < max_wait:
-            hist = json.loads(self._get(f"/history/{prompt_id}") or b"{}")
+            try:
+                hist = json.loads(self._get(f"/history/{prompt_id}") or b"{}")
+                blips = 0
+            except OSError:
+                # A network blip must not throw away a render still running on the GPU.
+                blips += 1
+                if blips > 5:
+                    raise
+                time.sleep(poll)
+                continue
             if prompt_id in hist:
                 entry = hist[prompt_id]
                 status = entry.get("status", {})
@@ -91,14 +109,20 @@ class ComfyClient:
         raise ComfyError(f"prompt {prompt_id} timed out after {max_wait}s")
 
     def download_first(self, outputs: dict, dest: str | Path, keys=("videos", "gifs", "images", "audio")) -> Path:
-        """Download the first file found in the outputs dict to dest."""
+        """Download the first saved file in the outputs dict.
+
+        Returns dest with the server file's extension: a video-only node answers
+        an image request with an .mp4, and a preview node's temp file is skipped.
+        """
         for node_out in outputs.values():
             for key in keys:
                 for f in node_out.get(key, []):
+                    if f.get("type", "output") != "output":
+                        continue
                     q = urllib.parse.urlencode(
                         {"filename": f["filename"], "subfolder": f.get("subfolder", ""), "type": f.get("type", "output")}
                     )
-                    dest = Path(dest)
+                    dest = Path(dest).with_suffix(Path(f["filename"]).suffix)
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     dest.write_bytes(self._get(f"/view?{q}"))
                     return dest

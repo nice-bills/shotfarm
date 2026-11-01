@@ -44,6 +44,8 @@ class MockNode:
                 u = urlparse(self.path)
                 if u.path == "/system_stats":
                     return self._send(200, b'{"ok":true}')
+                if u.path == "/object_info":
+                    return self._send(200, b'{"TextEncode":{}}')
                 if u.path.startswith("/history/"):
                     pid = u.path.split("/")[-1]
                     h = node.history.get(pid)
@@ -88,7 +90,7 @@ class MockNode:
                                 str(self.dir / name)], check=True)
                 out = {"9": {"images": [{"filename": name, "subfolder": "", "type": "output"}]}}
             else:
-                secs = float(meta.get("seconds", 4))
+                secs = float(meta["frames"]) / 24 if "frames" in meta else float(meta.get("seconds", 4))
                 name = f"{pid}.mp4"
                 subprocess.run(["ffmpeg", "-y", "-v", "error",
                                 "-f", "lavfi", "-i", f"testsrc2=s=320x192:r=24:d={secs}",

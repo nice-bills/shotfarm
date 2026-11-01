@@ -3,8 +3,8 @@
 Export your H3 workflow from ComfyUI with "Save (API Format)", then replace the
 values you want ShotFarm to control with placeholders:
 
-    "{{PROMPT}}"  "{{SECONDS}}"  "{{SEED}}"  "{{WIDTH}}"  "{{HEIGHT}}"
-    "{{FIRST_FRAME}}"  "{{LAST_FRAME}}"  "{{REF_AUDIO}}"
+    "{{PROMPT}}"  "{{FRAMES}}"  "{{SECONDS}}"  "{{SEED}}"  "{{WIDTH}}"  "{{HEIGHT}}"
+    "{{FIRST_FRAME}}"  "{{LAST_FRAME}}"  "{{GUIDE_CLIP}}"
 
 A placeholder that is the whole string value is replaced with a typed value
 (numbers stay numbers). Placeholders inside longer strings are substituted as text.

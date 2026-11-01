@@ -27,7 +27,7 @@ Three strategies are implemented so we can **measure** the trade-off rather than
 |---|---|---|---|
 | `sequential` | Baseline / prior art: each segment starts from the previous one's last frame | ≈ N × one segment | Drift accumulates ("photocopy effect") |
 | `parallel` | Keyframe images first, then every segment pinned between two keyframes | ≈ 1 image + 1 segment | Motion can stall at joins (each clip starts at zero velocity) |
-| `draft-parallel` | **ShotFarm's method.** A cheap low-res sequential *animatic* fixes motion and sound; the expensive final pass renders all segments in parallel, pinned to frames sliced from the animatic, with the animatic's audio just before each join passed as an audio reference | ≈ cheap draft + 1 segment | Draft pass is serial (Amdahl's law) |
+| `draft-parallel` | **ShotFarm's method.** A cheap low-res sequential *animatic* fixes motion and sound; the expensive final pass renders all segments in parallel, each guided by a 22-frame clip of the animatic's picture and sound before its join and pinned to its frame at the next join | ≈ cheap draft + 1 segment | Draft pass is serial (Amdahl's law) |
 
 Every run writes a report: wall-clock per stage, estimated cost, a per-GPU timeline, and **seam metrics** for every join:
 
@@ -36,7 +36,7 @@ Every run writes a report: wall-clock per stage, estimated cost, a per-GPU timel
 
 ## Status
 
-**Pre-alpha.** The orchestrator, scheduler (with retry and node failover), stitcher and seam metrics are implemented and tested end to end against mock GPU nodes (`pytest -q`, 8 tests). **Not yet run on real Nosana GPUs**: that is the next milestone, using the hackathon's Nosana credits.
+**Pre-alpha.** The orchestrator, scheduler (with retry and node failover), stitcher and seam metrics are implemented and tested end to end against mock GPU nodes (`pytest -q`). **Not yet run on real Nosana GPUs**: that is the next milestone, using the hackathon's Nosana credits.
 
 ## Quick start
 

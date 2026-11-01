@@ -39,14 +39,21 @@ def extract_frame_at(clip: str | Path, t: float, dest: str | Path) -> Path:
     return dest
 
 
-def extract_audio(clip: str | Path, dest: str | Path, start: float = 0.0, length: float | None = None) -> Path:
+def cut(clip: str | Path, dest: str | Path, start: float, length: float | None = None) -> Path:
+    """Frame-accurate cut of video and audio."""
     dest = Path(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
     args = ["ffmpeg", "-y", "-v", "error", "-ss", f"{max(start, 0):.3f}", "-i", str(clip)]
     if length:
         args += ["-t", f"{length:.3f}"]
-    _run(args + ["-vn", "-ac", "2", "-ar", str(SR), str(dest)])
+    _run(args + ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac", "-b:a", "192k", str(dest)])
     return dest
+
+
+def trim_head(clip: str | Path, seconds: float) -> Path:
+    clip = Path(clip)
+    tmp = cut(clip, clip.with_suffix(".trim.mp4"), seconds)
+    return tmp.replace(clip)
 
 
 # ----------------------------------------------------------------------------

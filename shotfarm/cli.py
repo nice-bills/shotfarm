@@ -17,6 +17,7 @@ from . import media
 from .comfy import ComfyClient
 from .storyboard import load
 from .strategies import STRATEGIES, Renderer, Templates, finish
+from .workflow import load_template
 
 
 def _farm(path: str) -> dict:
@@ -28,11 +29,16 @@ def _farm(path: str) -> dict:
 
 def cmd_check(a):
     cfg = _farm(a.farm)
+    # Catch a node image without the nodes our workflows need before paying for a run.
+    needed = {n["class_type"] for p in cfg.get("templates", {}).values() if Path(p).exists()
+              for n in load_template(p).values() if "class_type" in n}
     ok = 0
     for ep in cfg["endpoints"]:
-        h = ComfyClient(ep, timeout=10).healthy()
-        ok += h
-        print(f"{'UP  ' if h else 'DOWN'} {ep}")
+        c = ComfyClient(ep, timeout=10)
+        h = c.healthy()
+        missing = c.missing_nodes(needed) if h else set()
+        ok += h and not missing
+        print(f"{'UP  ' if h else 'DOWN'} {ep}" + (f"  missing nodes: {sorted(missing)}" if missing else ""))
     print(f"{ok}/{len(cfg['endpoints'])} nodes healthy")
 
 
@@ -46,7 +52,8 @@ def cmd_render(a):
           f"{len(endpoints)} GPU(s), strategy={a.strategy}")
     r = Renderer(sb, Templates(**cfg.get("templates", {})), work)
     result = STRATEGIES[a.strategy](r, endpoints)
-    rep = finish(result, work, a.strategy, float(cfg.get("usd_per_gpu_hour", 0.40)), a.crossfade)
+    rep = finish(result, work, a.strategy, float(cfg.get("usd_per_gpu_hour", 0.40)), a.crossfade,
+                 float(cfg.get("cold_start_seconds", 240)))
     rep.pop("timeline")
     print(json.dumps(rep, indent=2))
 

@@ -20,12 +20,12 @@ A render farm for long-form open AI video: render every shot of a film **at the 
 ## Why it's new
 
 - **MiniMax H3** (open weights, Aug 2026) generates video with native 32 kHz stereo audio, 4–15 s per generation, 768p, 24 fps. On Nosana an RTX 5090 renders a 5 s clip in about 2 min (~$0.013/clip, ~$0.40/GPU-hr, ~4 min cold start). Source: https://nosana.com/blog/how-to-use-minimax-h3
-- Every existing long-video method for H3 is **sequential**: each window is conditioned on the previous window's tail.
+- Existing long-video tools for H3 are **sequential or interactive**: each window is conditioned on the previous window's tail. Research has parallel tree sampling (ATS, arXiv 2605.20476), so don't claim nobody parallelizes. See `docs/RESEARCH.md`.
   - H3-Motion-Context / Endless MiniMax H3: https://comfyui-wiki.com/en/news/2026-09-03-endless-minimax-h3 (1:30 of video in ~2 h on one GPU)
   - Wan2GP sliding window, vLLM-Omni #6737 / #7838: https://github.com/vllm-project/vllm-omni/issues/6737 (has audio RMS-jump measurements we reuse as a metric)
   - Reddit thread on H3 clip chaining (r/StableDiffusion "Clip chaining for MiniMax H3"). User DeliciousGorilla found that pinning both ends of each clip (parallelizable) causes **motion stalls at the joins**, because each clip starts at zero velocity. That's the problem our draft-then-parallel method targets.
   - Academic basis for keyframe pinning: "Generating Long-Take Videos via Effective Keyframes and Guidance" (WACV 2025).
-- Our contribution is the systems layer: distributing segments across a decentralized grid, plus **draft-then-parallel**. First a cheap low-res sequential animatic fixes motion and sound. Then the expensive final pass renders all segments in parallel, pinned to frames sliced from the animatic, with the animatic's audio just before each join passed as a Ref2VA audio reference.
+- Our contribution is the systems layer: distributing segments across a decentralized grid, plus **draft-then-parallel**. First a cheap low-res sequential animatic fixes motion and sound. Then the expensive final pass renders all segments in parallel. Each starts from a 22-frame guide clip with sound, taken from the animatic before its join through `MiniMaxH3AddGuide`, and ends pinned to the animatic's frame at the next join. The guide frames are cut off afterwards.
 - Pitch hook: Disney key animators vs in-betweeners (1930s) and Pixar render farms. H3's first+last-frame mode is the in-betweener; Nosana is the render farm.
 
 ## Ideas we killed (don't revisit)
@@ -50,14 +50,15 @@ shotfarm/comfy.py        stdlib ComfyUI client: upload, /prompt, /history poll, 
 shotfarm/workflow.py     fills API-format workflow JSON placeholders ({{PROMPT}}, {{FIRST_FRAME}}, ...)
 shotfarm/scheduler.py    one worker thread per endpoint, shared queue, retries on other nodes, drops dead nodes, timeline
 shotfarm/strategies.py   sequential | parallel | draft-parallel, plus finish() -> report JSON
-shotfarm/media.py        ffmpeg: frame/audio extraction, stitch (hard cut or xfade), seam_report()
+shotfarm/media.py        ffmpeg: frame extraction, cut/trim, stitch (hard cut or xfade), seam_report()
 shotfarm/cli.py          python -m shotfarm check|render|seams
 tests/mock_node.py       fake ComfyUI node that renders real MP4/PNG with ffmpeg after a delay
-tests/test_farm.py       8 end-to-end tests (all pass, ~2 min)
+tests/test_farm.py       tests against mock nodes (all pass, ~3 min)
 examples/storyboard.yaml 30 s, 6-segment test film
 nosana/README.md         how to deploy the H3 template on Nosana + budget
 workflows/README.md      how to export ComfyUI workflows with placeholders
 docs/CLAIM.md            Nosana credit claim form answers
+docs/RESEARCH.md         verified template facts, open risks, prior art to cite
 ```
 
 Only dependencies are numpy, PyYAML and pytest, plus `ffmpeg`/`ffprobe` on PATH. Run `pytest -q`.
@@ -81,8 +82,11 @@ Seam metrics: `video_jump` = pixel change across the join ÷ median in-clip fram
 
 ## Known risks / open questions
 
-- The real H3 ComfyUI node names and inputs are unverified. The templates in `tests/templates/` are mocks with a fake top-level `"meta"` key that real workflows don't have.
-- Does FL2VA accept reference audio? The vLLM-Omni work says FL2VA has no audio slot, and continuation audio only works through the **Ref2VA** packer. So the `final` template should probably be Ref2VA with the first/last images as references plus the audio tail.
+- Full list with sources in `docs/RESEARCH.md`. Test those risks in order on one node before scaling up.
+- The templates in `tests/templates/` are mocks with a fake top-level `"meta"` key that real workflows don't have. Real node names are in `workflows/README.md`, but no real workflow has run yet.
+- Nosana's H3 template has one model per variant and no image model. Use the Image to Video variant everywhere; Ref2VA can't pin frames anyway.
+- Does `nosana/comfyui:2.0.11` include `MiniMaxH3AddGuide`, and does its audio input work? `shotfarm check` answers the first.
+- Pinned low-res animatic frames may flash soft at joins.
 - The draft pass is serial (Amdahl). Measure how much faster a low-res/turbo-LoRA draft really is.
 - Nosana said in Sept 2026 that RTX 4090/5090 demand exceeds supply, so 8 × 5090 at once may not be available. RTX PRO 6000 is the fallback.
 - Always stop Nosana deployments right after each run to save credits. The default "Infinite" strategy restarts forever.

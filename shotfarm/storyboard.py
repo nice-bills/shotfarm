@@ -6,10 +6,16 @@ other and can render at the same time on different GPUs.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 
 import yaml
+
+
+def frames_for(seconds: float, fps: int = 24) -> int:
+    """H3 snaps frame counts up to its 17k+5 grid: 5 s is 124 frames, 15 s is 362."""
+    return 17 * math.ceil((seconds * fps - 5) / 17) + 5
 
 
 @dataclass
@@ -21,7 +27,8 @@ class Segment:
     seed: int = 0
     first_frame: str | None = None   # local path, filled by the keyframe stage
     last_frame: str | None = None
-    ref_audio: str | None = None     # local path, filled by draft-then-parallel
+    guide_clip: str | None = None    # local path, filled by draft-then-parallel
+    frames: int | None = None        # generated length, if not frames_for(seconds)
     output: str | None = None        # local path of the rendered clip
 
     def as_dict(self) -> dict:
@@ -48,6 +55,8 @@ class Storyboard:
                 f"need {len(self.segments) + 1} keyframes for {len(self.segments)} "
                 f"segments, got {len(self.keyframes)}"
             )
+        if self.width % 32 or self.height % 32:
+            raise ValueError(f"{self.width}x{self.height}: H3 width and height must be multiples of 32")
         for s in self.segments:
             # MiniMax H3's native contract is 4-15 s per generation.
             if not 4 <= s.seconds <= 15:

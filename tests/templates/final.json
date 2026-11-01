@@ -2,7 +2,7 @@
  "meta": {
   "kind": "video",
   "seed": "{{SEED}}",
-  "seconds": "{{SECONDS}}"
+  "frames": "{{FRAMES}}"
  },
  "6": {
   "class_type": "TextEncode",
@@ -12,17 +12,12 @@
  },
  "10": {
   "inputs": {
-   "image": "{{FIRST_FRAME}}"
+   "file": "{{GUIDE_CLIP}}"
   }
  },
  "11": {
   "inputs": {
    "image": "{{LAST_FRAME}}"
-  }
- },
- "12": {
-  "inputs": {
-   "audio": "{{REF_AUDIO}}"
   }
  }
 }
